@@ -5,7 +5,7 @@ from django.urls import include, path
 
 router = DefaultRouter()
 router.register('user', UserViewSet)
-router.register('stuff', StuffViewSet)
+router.register('staff', StaffViewSet)
 router.register('sensor', SensorViewSet)
 router.register('fingerprint', FingerprintViewSet)
 router.register('log', LogViewSet)
@@ -21,5 +21,8 @@ urlpatterns = [
     # path('has-access/', has_access),
     path('get-statistics/', get_statistics),
     path('get-living-students-count/', get_living_students_count),
+    path('get-backups/', get_backups),
+    path('backup/', create_backup),
+    path('restore/', restore_database),
     path('', include(router.urls)),
 ]

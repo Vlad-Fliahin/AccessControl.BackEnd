@@ -1,28 +1,20 @@
 import io
 import datetime
-
-import cv2
-import os
-import sys
-import numpy
-import base64
-import matplotlib.pyplot as plt
-from PIL import Image
-from rest_framework.permissions import AllowAny
-
-from .enhance import image_enhance
-from skimage.morphology import skeletonize, thin
-
+import json
+from pathlib import Path
+from collections import defaultdict, Counter
+from django.core.management import call_command
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.db import connection
 from rest_framework import viewsets
 from rest_framework import permissions
 from rest_framework.decorators import api_view, action, permission_classes
-
 from .models import *
 from .serializers import *
+from os import listdir
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 ELECTRICITY_PRICE = 12.41
 GAS_PRICE = 3.306
 WATER_PRICE = 1.5
@@ -68,7 +60,7 @@ class UserViewSet(viewsets.ModelViewSet):
 #     return JsonResponse({})
 
 
-class StuffViewSet(viewsets.ModelViewSet):
+class StaffViewSet(viewsets.ModelViewSet):
     queryset = Staff.objects.all()
     serializer_class = StaffSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -99,15 +91,15 @@ class RoomViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([permissions.IsAuthenticated])
 def get_statistics(request):
     start_date = request.GET['start_date']
     end_date = request.GET['end_date']
 
-    start_date = datetime.datetime.strptime(start_date, '%d-%m-%Y')
-    end_date = datetime.datetime.strptime(end_date, '%d-%m-%Y')
+    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
 
-    d = dict()
+    d = defaultdict(int)
     for room in Room.objects.all():
         with connection.cursor() as cursor:
             cursor.execute("SELECT COUNT(log_id) FROM main_log "
@@ -117,12 +109,39 @@ def get_statistics(request):
                            "and main_log.scan_time between %(start_time)s and %(end_time)s",
                            {'room_id': room.room_id, 'start_time': start_date, 'end_time': end_date})
             logs = cursor.fetchone()[0]
-            d[room.room_id] = logs
-    return JsonResponse(d)
+            d[room.description] += logs
+    print(d)
+    response_data = []
+    for key, value in d.items():
+        response_data.append({'id': key, 'count': value})
+    return JsonResponse(response_data, safe=False)
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([permissions.AllowAny])
+def get_backups(request):
+    backup_path = BASE_DIR / 'backup'
+    backups = listdir(backup_path)
+    return JsonResponse(backups, safe=False)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAdminUser])
+def create_backup(request):
+    call_command('dbbackup')
+    return JsonResponse({"backup": "True"})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAdminUser])
+def restore_database(request):
+    file_name = request.data['backup']
+    call_command('dbrestore', input_filename=file_name, skip_checks=True, interactive=False)
+    return JsonResponse({"restore": "True"})
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
 def get_living_students_count(request):
     active_users = []
     for user in User.objects.all():
@@ -142,7 +161,7 @@ def get_living_students_count(request):
                 log_count = cursor.fetchone()[0]
                 if log_count > 0:
                     active_users.append(user)
-    return JsonResponse({'Living in campus': len(active_users)})
+    return JsonResponse({'Living': len(active_users)})
 
 
 class MeterReadingViewSet(viewsets.ModelViewSet):

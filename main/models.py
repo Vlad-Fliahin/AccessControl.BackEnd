@@ -27,7 +27,7 @@ class Staff(models.Model):
     user = models.OneToOneField(User,
                                 on_delete=models.CASCADE,
                                 parent_link=True)
-    job = models.CharField(max_length=50)
+    job = models.CharField(max_length=50, blank=True)
 
 
 class Fingerprint(models.Model):
@@ -90,9 +90,10 @@ class Student(models.Model):
                                 on_delete=models.CASCADE,
                                 parent_link=True)
     room = models.ForeignKey(Room,
+                             blank=True,
                              on_delete=models.CASCADE,
                              parent_link=True)
-    course = models.IntegerField()
+    course = models.IntegerField(blank=True)
 
 
 class Fine(models.Model):
