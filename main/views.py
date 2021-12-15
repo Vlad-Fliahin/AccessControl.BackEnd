@@ -7,6 +7,7 @@ from django.core.management import call_command
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.db import connection
+from numpy import long
 from rest_framework import viewsets
 from rest_framework import permissions
 from rest_framework.decorators import api_view, action, permission_classes
@@ -45,6 +46,23 @@ class UserViewSet(viewsets.ModelViewSet):
             return JsonResponse({"has_access": True})
         return JsonResponse({'has_access': False})
 
+    @action(detail=True, methods=['GET'])
+    def get_student_id_if_exists(self, request, pk=None):
+        # with connection.cursor() as cursor:
+        #     cursor.execute("SELECT student_id FROM main_student "
+        #                    "where main_student.user_id == %(user_id)s",
+        #                    {'user_id': long(pk)})
+        #     student = cursor.fetchone()[0]
+        students = Student.objects.all()
+        student = -1
+        for x in students:
+            print(type(pk))
+            print(type(x.user_id))
+            if int(x.user_id) == int(pk):
+                student = int(x.student_id)
+            else:
+                print(int(x.user_id), pk)
+        return JsonResponse({"student_id": student})
 
 # def verify(request, fingerprint):
 #     f = io.BytesIO(base64.b64decode(fingerprint))
