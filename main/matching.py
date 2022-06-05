@@ -3,18 +3,20 @@ import os
 from PIL import Image
 import io
 
+PATH = path = os.getcwd().rsplit('/', 1)[0] + '/media/pics/'
 
-def convert(path):
-    with open(f"{path}1__M_Left_index_finger.BMP", "rb") as image:
+
+def convert():
+    with open('/Users/fliahin/Desktop/test2.bmp', 'rb') as image:
         b64string = base64.b64encode(image.read())
+
+    # decodeit.write(base64.b64decode((byte)))
+
     print(b64string)
-
-    f = io.BytesIO(base64.b64decode(b64string))
-    pilimage = Image.open(f)
-
-    print("d")
+    print(b64string.decode('ascii'))
 
 
 if __name__ == '__main__':
-    path = os.getcwd()[:-4] + 'media/pics/'
-    convert(path)
+    convert()
+    # convert('test.BMP')
+    # convert('test2.bmp')

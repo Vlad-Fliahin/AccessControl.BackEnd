@@ -17,7 +17,7 @@ router.register('fine', FineViewSet)
 router.register('penalty', PenaltyViewSet)
 
 urlpatterns = [
-    # path('verify/', verify),
+    path('verify/', verify),
     # path('has-access/', has_access),
     path('get-statistics/', get_statistics),
     path('get-living-students-count/', get_living_students_count),
